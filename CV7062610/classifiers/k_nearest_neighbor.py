@@ -76,9 +76,12 @@ class KNearestNeighbor(object):
                 # not use a loop over dimension, nor use np.linalg.norm().          #
                 #####################################################################
                 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-                pass
-
+                te_example = X[i, :]  # in assignment1: its size is (,3072)
+                tr_example = self.X_train[j, :]  # same
+                subtract_arr = np.subtract(tr_example, te_example)
+                square_arr = np.square(subtract_arr)
+                sum = np.sum(square_arr)
+                dists[i, j] = np.sqrt(sum)
                 # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
 
@@ -100,9 +103,11 @@ class KNearestNeighbor(object):
             # Do not use np.linalg.norm().                                        #
             #######################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-            pass
-
+            te_example = X[i, :]  # in assignment1: its size is (,3072)
+            subtract_mat = self.X_train - te_example
+            square_mat = np.square(subtract_mat)
+            sum_arr = np.sum(square_mat)  # sum each row and get a vector of size Ntr
+            dists[i, :] = np.sqrt(sum_arr)
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
 
@@ -130,9 +135,9 @@ class KNearestNeighbor(object):
         #       and two broadcast sums.                                         #
         #########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
-
+        train_sum = np.sum((self.X_train)**2, axis=1, keepdims=True)
+        test_sum = np.sum(X**2, axis=1, keepdims=True)
+        dists = np.sqrt(-2 * (self.X_train).dot(X.T) + train_sum + test_sum.T)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
 
@@ -143,7 +148,7 @@ class KNearestNeighbor(object):
 
         Inputs:
         - dists: A numpy array of shape (num_test, num_train) where dists[i, j]
-          gives the distance betwen the ith test point and the jth training point.
+          gives the distance between the ith test point and the jth training point.
 
         Returns:
         - y: A numpy array of shape (num_test,) containing predicted labels for the
@@ -163,9 +168,9 @@ class KNearestNeighbor(object):
             # Hint: Look up the function numpy.argsort.                             #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-            pass
-
+            dist_arr = dists[i, :]
+            k_min_idx = np.argpartition(dist_arr, k)[:k]  # k indices of the smallest distances from i
+            closest_y = map(lambda j: self.y_train[j], k_min_idx)
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             #########################################################################
             # TODO:                                                                 #
@@ -175,9 +180,12 @@ class KNearestNeighbor(object):
             # label.                                                                #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-            pass
-
+            y = np.bincount(closest_y)
+            maximum = max(y)
+            ans = maximum[0]
+            for k in range(len(y)):
+                if y[k] == maximum and y[k] < ans:
+                    ans = i
+            y_pred[i] = ans
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
         return y_pred
