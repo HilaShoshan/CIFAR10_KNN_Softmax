@@ -104,9 +104,9 @@ class KNearestNeighbor(object):
             #######################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             te_example = X[i, :]  # in assignment1: its size is (,3072)
-            subtract_mat = self.X_train - te_example
+            subtract_mat = np.subtract(self.X_train, te_example)  # subtract every row of matrix by vector
             square_mat = np.square(subtract_mat)
-            sum_arr = np.sum(square_mat)  # sum each row and get a vector of size Ntr
+            sum_arr = square_mat.sum(axis=1)  # sum each row and get a vector of size Ntr
             dists[i, :] = np.sqrt(sum_arr)
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
@@ -135,9 +135,12 @@ class KNearestNeighbor(object):
         #       and two broadcast sums.                                         #
         #########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        train_sum = np.sum((self.X_train)**2, axis=1, keepdims=True)
-        test_sum = np.sum(X**2, axis=1, keepdims=True)
-        dists = np.sqrt(-2 * (self.X_train).dot(X.T) + train_sum + test_sum.T)
+        # train_sum = np.sum((self.X_train)**2, axis=1, keepdims=True)
+        # test_sum = np.sum(X**2, axis=1, keepdims=True)
+        # dists = np.sqrt(-2 * (self.X_train).dot(X.T) + train_sum + test_sum.T)
+        sum_test = np.sum(X**2, axis=1, keepdims=True)
+        sum_train = np.sum(self.X_train**2, axis=1, keepdims=True)
+        dists = np.sqrt(-2*X.dot(self.X_train.T) + sum_test + sum_train.T)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
 
@@ -170,7 +173,7 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             dist_arr = dists[i, :]
             k_min_idx = np.argpartition(dist_arr, k)[:k]  # k indices of the smallest distances from i
-            closest_y = map(lambda j: self.y_train[j], k_min_idx)
+            closest_y = list(map(lambda j: self.y_train[j], k_min_idx))
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             #########################################################################
             # TODO:                                                                 #
@@ -180,12 +183,6 @@ class KNearestNeighbor(object):
             # label.                                                                #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-            y = np.bincount(closest_y)
-            maximum = max(y)
-            ans = maximum[0]
-            for k in range(len(y)):
-                if y[k] == maximum and y[k] < ans:
-                    ans = i
-            y_pred[i] = ans
+            y_pred[i] = np.bincount(closest_y).argmax()
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return y_pred
