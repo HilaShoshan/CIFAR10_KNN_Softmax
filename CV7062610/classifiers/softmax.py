@@ -3,6 +3,7 @@ import numpy as np
 from random import shuffle
 from past.builtins import xrange
 
+
 def softmax_loss_naive(W, X, y, reg):
     """
     Softmax loss function, naive implementation (with loops)
@@ -33,13 +34,30 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N = X.shape[0]  # each minibatch size
+    C = W.shape[1]  # the number of classes
 
     # Softmax Loss
+    for i in range(N):
+        example = X[i]
+        classes_scores = np.dot(example, W)
+        classes_scores -= max(classes_scores)
+        numerator = np.exp(classes_scores)
+        denominator = np.sum(numerator)
+        loss -= np.log(numerator[y[i]] / denominator)  # update loss: L = -Σy_i * log(h_i)
+        for j in range(C):
+            h_i = numerator[j] / denominator  # h_i = e^(x_i) / Σe^(x_k)
+            if j == y[i]:
+                dW[:, j] += (h_i - 1) * X[i, :]
+            else:
+                dW[:, j] += h_i * X[i, :]
 
-    
+    loss /= N
+    dW /= N
+
     # Regularization
-    
+    loss += reg/2 * np.sum(np.dot(W, W))
+    dW += reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -64,7 +82,25 @@ def softmax_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Softmax Loss
+    N = X.shape[0]  # each minibatch size
+    C = W.shape[1]  # the number of classes
+    classes_scores = np.dot(X, W)  # matrix multiplication
+    classes_scores -= np.max(classes_scores, axis=1).reshape(-1, 1)
+    numerator = np.exp(classes_scores)
+    denominator = np.sum(numerator, axis=1).reshape((-1,1))
+    h = numerator / denominator
+    loss = np.sum(-np.log(h[range(N), y]))
+
+    loss /= N
+    dscores = h.copy()
+
+    # Regularization
+    loss += reg/2 * np.sum(np.dot(W, W))
+    dscores[range(N), list(y)] -= 1
+    dW = np.dot(X.T, dscores)
+    dW /= N
+    dW += reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
