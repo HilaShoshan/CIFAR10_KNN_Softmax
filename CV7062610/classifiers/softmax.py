@@ -40,24 +40,22 @@ def softmax_loss_naive(W, X, y, reg):
     # Softmax Loss
     for i in range(N):
         example = X[i]
-        classes_scores = np.dot(example, W)
-        classes_scores -= max(classes_scores)
-        numerator = np.exp(classes_scores)
+        classes_scores = np.dot(example, W)  # predicted scores
+        true_classes_scores = classes_scores[y[i]]  # true scores
+        numerator = np.exp(classes_scores)  # h_i = e^(x_i) / Σe^(x_k)
         denominator = np.sum(numerator)
-        loss -= np.log(numerator[y[i]] / denominator)  # update loss: L = -Σy_i * log(h_i)
+        loss -= true_classes_scores + np.log(denominator)  # update loss: L = -Σy_i * log(h_i)
         for j in range(C):
-            h_i = numerator[j] / denominator  # h_i = e^(x_i) / Σe^(x_k)
+            dW[:, j] += (numerator[j] * example) / denominator
             if j == y[i]:
-                dW[:, j] += (h_i - 1) * X[i, :]
-            else:
-                dW[:, j] += h_i * X[i, :]
+                dW[:, y[i]] -= example
 
     loss /= N
     dW /= N
 
     # Regularization
-    loss += reg/2 * np.sum(np.dot(W, W))
-    dW += reg * W
+    loss += 0.5 * reg * np.sum(W * W)
+    dW += W * reg
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
