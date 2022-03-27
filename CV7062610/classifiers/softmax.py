@@ -41,12 +41,14 @@ def softmax_loss_naive(W, X, y, reg):
     for i in range(N):
         example = X[i]
         classes_scores = np.dot(example, W)  # predicted scores
+        classes_scores -= np.max(classes_scores)
         true_classes_scores = classes_scores[y[i]]  # true scores
-        numerator = np.exp(classes_scores)  # h_i = e^(x_i) / Σe^(x_k)
-        denominator = np.sum(numerator)
-        loss -= true_classes_scores + np.log(denominator)  # update loss: L = -Σy_i * log(h_i)
+        numerator_pred = np.exp(classes_scores)  # h_i = e^(x_i) / Σe^(x_k)
+        denominator = np.sum(numerator_pred)
+        numerator_true = np.exp(true_classes_scores)
+        loss -= np.log(numerator_true / denominator)  # update loss: L = -Σy_i * log(h_i)
         for j in range(C):
-            dW[:, j] += (numerator[j] * example) / denominator
+            dW[:, j] += (numerator_pred[j] * example) / denominator
             if j == y[i]:
                 dW[:, y[i]] -= example
 
@@ -55,7 +57,7 @@ def softmax_loss_naive(W, X, y, reg):
 
     # Regularization
     loss += 0.5 * reg * np.sum(W * W)
-    dW += W * reg
+    dW += reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -82,21 +84,21 @@ def softmax_loss_vectorized(W, X, y, reg):
 
     # Softmax Loss
     N = X.shape[0]  # each minibatch size
-    C = W.shape[1]  # the number of classes
     classes_scores = np.dot(X, W)  # matrix multiplication
-    classes_scores -= np.max(classes_scores, axis=1).reshape(-1, 1)
+    classes_scores -= np.max(classes_scores, axis=1)[:, np.newaxis]
     numerator = np.exp(classes_scores)
-    denominator = np.sum(numerator, axis=1).reshape((-1,1))
+    denominator = np.sum(numerator, axis=1, keepdims=True)
     h = numerator / denominator
-    loss = np.sum(-np.log(h[range(N), y]))
-
-    loss /= N
-    dscores = h.copy()
+    loss = np.sum(-np.log(h[np.arange(N), y]))
 
     # Regularization
-    loss += reg/2 * np.sum(np.dot(W, W))
-    dscores[range(N), list(y)] -= 1
-    dW = np.dot(X.T, dscores)
+
+    loss /= N
+    loss += 0.5 * reg * np.sum(W * W)
+
+    ind = np.zeros_like(classes_scores)
+    ind[np.arange(N), y] = 1
+    dW = np.dot(X.T, numerator / denominator - ind)
     dW /= N
     dW += reg * W
 
